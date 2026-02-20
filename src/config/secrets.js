@@ -3,14 +3,9 @@ import { SecretsManagerClient, GetSecretValueCommand, ListSecretsCommand } from 
 /**
  * AWS Secrets Manager client instance
  * Uses default credential chain (IAM role for EC2 instances)
- * Explicitly configured to use instance metadata service for credentials
  */
 const client = new SecretsManagerClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  // Ensure the SDK can access EC2 instance metadata service
-  // This is important when running in Docker containers on EC2
-  maxAttempts: 3,
-  retryMode: 'standard'
+  region: process.env.AWS_REGION || 'us-east-1'
 });
 
 /**
@@ -75,15 +70,6 @@ export async function getSecret(secretName, useCache = true) {
 
     return secretValue;
   } catch (error) {
-    // Log the full error for debugging
-    console.error('AWS Secrets Manager Error:', {
-      name: error.name,
-      message: error.message,
-      code: error.$metadata?.httpStatusCode,
-      requestId: error.$metadata?.requestId,
-      secretName
-    });
-
     if (error.name === 'ResourceNotFoundException') {
       throw new Error(`Secret '${secretName}' not found`);
     } else if (error.name === 'AccessDeniedException' || error.name === 'UnauthorizedOperation') {
@@ -129,14 +115,6 @@ export async function listSecrets(maxResults = 100) {
     const response = await client.send(command);
     return response.SecretList || [];
   } catch (error) {
-    // Log the full error for debugging
-    console.error('AWS Secrets Manager Error:', {
-      name: error.name,
-      message: error.message,
-      code: error.$metadata?.httpStatusCode,
-      requestId: error.$metadata?.requestId
-    });
-
     if (error.name === 'AccessDeniedException' || error.name === 'UnauthorizedOperation') {
       throw new Error(`Access denied to list secrets. Check IAM role permissions. Error: ${error.message}`);
     } else if (error.name === 'UnrecognizedClientException' || error.message?.includes('security credentials')) {
