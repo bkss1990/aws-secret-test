@@ -6,14 +6,17 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: aws-secrets-api
-    ports:
-      - "${PORT:-3000}:3000"
+    # Use host network mode on EC2 to access instance metadata service
+    # This allows the container to use the EC2 instance's IAM role
+    network_mode: host
+    # Note: When using host network mode, ports mapping is not needed
+    # The app will bind directly to the host's network interface
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - PORT=3000
+      - PORT=${PORT:-3000}
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
-    # For EC2, the IAM role will be used automatically
+    # For EC2, the IAM role will be used automatically via instance metadata
     # For local testing, you can mount AWS credentials:
     # volumes:
     #   - ~/.aws:/home/nodejs/.aws:ro

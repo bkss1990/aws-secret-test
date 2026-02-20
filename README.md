@@ -96,16 +96,21 @@ The server will start on the port specified in `PORT` environment variable (defa
 docker build -t aws-secrets-api .
 ```
 
-### Running with Docker
+### Running with Docker on EC2
+
+**Important:** On EC2, use `--network host` to allow the container to access the EC2 instance metadata service for IAM role credentials:
 
 ```bash
 docker run -d \
   --name aws-secrets-api \
-  -p 3000:3000 \
-  -e AWS_REGION=us-east-1 \
+  --network host \
+  -e AWS_REGION=eu-central-1 \
   -e NODE_ENV=production \
+  -e PORT=3000 \
   aws-secrets-api
 ```
+
+**Note:** When using `--network host`, the `-p` port mapping is not needed as the container uses the host's network directly.
 
 ### Using Docker Compose
 
@@ -122,7 +127,19 @@ docker-compose down
 
 ### Docker on EC2
 
-When running on EC2 with an IAM role attached, the container will automatically use the instance's IAM role credentials. No additional configuration needed.
+When running on EC2 with an IAM role attached, you **must** use `--network host` mode so the container can access the EC2 instance metadata service (169.254.169.254) to retrieve IAM role credentials.
+
+**Required:** Use `--network host` when running the container:
+```bash
+docker run -d --name aws-secrets-api --network host -e AWS_REGION=eu-central-1 aws-secrets-api
+```
+
+Or with docker-compose (already configured):
+```bash
+docker-compose up -d
+```
+
+The container will automatically use the instance's IAM role credentials via the instance metadata service.
 
 ### Local Testing with Docker
 
