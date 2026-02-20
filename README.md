@@ -14,7 +14,7 @@ Express.js backend with Swagger API documentation and AWS Secrets Manager integr
 
 ## Prerequisites
 
-- Node.js (v18 or higher recommended)
+- Node.js (v18 or higher recommended) OR Docker
 - AWS Account with Secrets Manager access
 - EC2 instance with IAM role attached (for production)
 
@@ -88,6 +88,67 @@ npm start
 
 The server will start on the port specified in `PORT` environment variable (default: 3000).
 
+## Docker Deployment
+
+### Building the Docker Image
+
+```bash
+docker build -t aws-secrets-api .
+```
+
+### Running with Docker
+
+```bash
+docker run -d \
+  --name aws-secrets-api \
+  -p 3000:3000 \
+  -e AWS_REGION=us-east-1 \
+  -e NODE_ENV=production \
+  aws-secrets-api
+```
+
+### Using Docker Compose
+
+```bash
+# Start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+```
+
+### Docker on EC2
+
+When running on EC2 with an IAM role attached, the container will automatically use the instance's IAM role credentials. No additional configuration needed.
+
+### Local Testing with Docker
+
+For local testing, you can mount AWS credentials:
+
+```bash
+docker run -d \
+  --name aws-secrets-api \
+  -p 3000:3000 \
+  -v ~/.aws:/home/nodejs/.aws:ro \
+  -e AWS_REGION=us-east-1 \
+  aws-secrets-api
+```
+
+Or use environment variables:
+
+```bash
+docker run -d \
+  --name aws-secrets-api \
+  -p 3000:3000 \
+  -e AWS_ACCESS_KEY_ID=your-key \
+  -e AWS_SECRET_ACCESS_KEY=your-secret \
+  -e AWS_REGION=us-east-1 \
+  aws-secrets-api
+```
+
 ## API Endpoints
 
 ### Health Check
@@ -159,14 +220,18 @@ aws-secrets-test/
 │   ├── config/
 │   │   └── secrets.js          # AWS Secrets Manager integration
 │   ├── routes/
-│   │   └── health.js           # Health check endpoint
+│   │   ├── health.js           # Health check endpoint
+│   │   └── secrets.js          # Secrets endpoints
 │   ├── middleware/
 │   │   └── errorHandler.js     # Error handling middleware
 │   ├── swagger/
 │   │   └── swagger.js          # Swagger configuration
 │   └── app.js                  # Express app setup
 ├── .env.example                # Environment variables template
+├── .dockerignore               # Docker ignore file
 ├── .gitignore
+├── Dockerfile                  # Docker container definition
+├── docker-compose.yml          # Docker Compose configuration
 ├── package.json
 └── README.md
 ```
